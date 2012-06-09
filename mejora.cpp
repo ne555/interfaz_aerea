@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include "aux.h"
+#include <algorithm>
 
 int main(int argc, char **argv){
 	cv::VideoCapture capture(0);
@@ -47,6 +48,7 @@ int main(int argc, char **argv){
 				for(size_t M=0; M<hsv[K].cols; ++M)
 					hsv[K].at<byte>(L,M) *= (hsv[0].at<byte>(L,M)==255);
 
+		//identificacion de regiones
 		byte color = 50;
 		for(size_t K=0; K<hsv[0].rows; ++K)
 			for(size_t L=0; L<hsv[0].cols; ++L){
@@ -55,6 +57,28 @@ int main(int argc, char **argv){
 					color += 10;
 				}
 			}
+
+		//Sobreviven los mas grandes
+		cv::Mat freq = histogram(hsv[0]);
+		*freq.begin<float>() = 0;
+		cv::MatIterator_<float> max1 = std::max_element( freq.begin<float>(), freq.end<float>() );
+		*max1 = 0;
+		cv::MatIterator_<float> max2 = std::max_element( freq.begin<float>(), freq.end<float>() );
+		*max2 = 0;
+		size_t color1 = std::distance( freq.begin<float>(), max1 );
+		size_t color2 = std::distance( freq.begin<float>(), max2 );
+
+		for(size_t K=0; K<hsv[0].rows; ++K)
+			for(size_t L=0; L<hsv[0].cols; ++L){
+				if(hsv[0].at<byte>(K,L)==color1)
+					hsv[0].at<byte>(K,L)= 100;
+				else if(hsv[0].at<byte>(K,L)==color2)
+					hsv[0].at<byte>(K,L)= 200;
+				else
+					hsv[0].at<byte>(K,L)= 0;
+			}
+
+
 
 
 
