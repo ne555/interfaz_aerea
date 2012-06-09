@@ -32,10 +32,9 @@ int main(int argc, char **argv){
 		cv::merge(hsv, frame);
 
 		//umbralizacion
-		cv::Scalar hsv_min(value[0]-alpha, value[1]-alpha, value[2]-alpha, 0);
-		cv::Scalar hsv_max(value[0]+alpha, value[1]+alpha, value[2]+alpha, 0);
-		for(size_t K=0; K<hsv.size(); ++K)
-			cv::inRange(hsv[K], cv::Scalar::all(hsv_min[K]), cv::Scalar::all(hsv_max[K]), hsv[K]);
+		cv::Scalar hsv_min = cv::Scalar::all(value[0]-alpha);
+		cv::Scalar hsv_max = cv::Scalar::all(value[0]+alpha);
+		cv::inRange(hsv[0], cv::Scalar::all(hsv_min[0]), cv::Scalar::all(hsv_max[0]), hsv[0]);
 
 		cv::medianBlur(hsv[0], hsv[0], 5); //eliminar huecos internos
 		cv::dilate(hsv[0], hsv[0], cv::Mat());
