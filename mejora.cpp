@@ -42,11 +42,6 @@ int main(int argc, char **argv){
 		cv::dilate(hsv[0], hsv[0], cv::Mat());
 
 
-		//enmascarar los otros canales
-		for(size_t K=1; K<hsv.size(); ++K)
-			for(size_t L=0; L<hsv[K].rows; ++L)
-				for(size_t M=0; M<hsv[K].cols; ++M)
-					hsv[K].at<byte>(L,M) *= (hsv[0].at<byte>(L,M)==255);
 
 		//identificacion de regiones
 		byte color = 50;
@@ -79,6 +74,11 @@ int main(int argc, char **argv){
 			}
 
 
+		//enmascarar los otros canales
+		for(size_t K=1; K<hsv.size(); ++K)
+			for(size_t L=0; L<hsv[K].rows; ++L)
+				for(size_t M=0; M<hsv[K].cols; ++M)
+					hsv[K].at<byte>(L,M) *= (hsv[0].at<byte>(L,M)>0);
 
 
 
