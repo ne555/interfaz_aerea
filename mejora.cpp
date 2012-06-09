@@ -22,6 +22,7 @@ int main(int argc, char **argv){
 
 	while( true ){
 		capture>>frame;
+		cv::flip(frame, frame, 1);
 		std::vector<cv::Mat> hsv;
 		cv::cvtColor(frame, frame, CV_BGR2HSV);
 		cv::medianBlur(frame, frame, 5); //quitar ruido impulsivo
