@@ -34,12 +34,10 @@ int main(int argc, char **argv){
 		//umbralizacion
 		cv::Scalar hsv_min(value[0]-alpha, value[1]-alpha, value[2]-alpha, 0);
 		cv::Scalar hsv_max(value[0]+alpha, value[1]+alpha, value[2]+alpha, 0);
-		for(size_t K=0; K<hsv.size(); ++K){
-			cv::Mat aux;
+		for(size_t K=0; K<hsv.size(); ++K)
 			cv::inRange(hsv[K], cv::Scalar::all(hsv_min[K]), cv::Scalar::all(hsv_max[K]), hsv[K]);
-		}
 
-		cv::medianBlur(frame, frame, 3); //eliminar huecos internos
+		cv::medianBlur(hsv[0], hsv[0], 5); //eliminar huecos internos
 
 		for(size_t K=0; K<hsv.size(); ++K)
 			cv::imshow(windows[K], hsv[K]);
