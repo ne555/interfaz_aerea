@@ -12,8 +12,8 @@ int main(int argc, char **argv){
 	for(size_t K=0; K<3; ++K)
 		cv::namedWindow(windows[K], CV_WINDOW_KEEPRATIO);
 
-	int value[3] = {0};
-	int alpha = 5;
+	int value[3] = {8};
+	int alpha = 7;
 	cv::namedWindow("alpha", CV_WINDOW_KEEPRATIO);
 	cv::createTrackbar("alpha","alpha", &alpha, 255, NULL, NULL);
 
@@ -39,11 +39,23 @@ int main(int argc, char **argv){
 		cv::medianBlur(hsv[0], hsv[0], 5); 
 		cv::dilate(hsv[0], hsv[0], cv::Mat());
 
+
 		//enmascarar los otros canales
 		for(size_t K=1; K<hsv.size(); ++K)
 			for(size_t L=0; L<hsv[K].rows; ++L)
 				for(size_t M=0; M<hsv[K].cols; ++M)
 					hsv[K].at<byte>(L,M) *= (hsv[0].at<byte>(L,M)==255);
+
+		byte color = 50;
+		for(size_t K=0; K<hsv[0].rows; ++K)
+			for(size_t L=0; L<hsv[0].cols; ++L){
+				if(hsv[0].at<byte>(K,L)==255){
+					cv::floodFill(hsv[0], cv::Point(L,K), color);
+					color += 10;
+				}
+			}
+
+
 
 		for(size_t K=0; K<hsv.size(); ++K)
 			cv::imshow(windows[K], hsv[K]);
