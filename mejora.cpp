@@ -16,11 +16,13 @@ int main(int argc, char **argv){
 		capture>>frame;
 		std::vector<cv::Mat> hsv;
 		cv::cvtColor(frame, frame, CV_BGR2HSV);
+		cv::medianBlur(frame, frame, 5);
+
 		cv::split(frame, hsv);
 
 		for(size_t K=0; K<hsv.size(); ++K)
 			cv::imshow(windows[K], hsv[K]);
-		if(cv::waitKey(30)>=0) break;
+		if(cv::waitKey(10)>=0) break;
 	}
 	return 0;
 }
