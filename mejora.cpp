@@ -28,7 +28,6 @@ int main(int argc, char **argv){
 
 		cv::split(frame, hsv);
 
-		cv::equalizeHist(hsv[2], hsv[2]);
 		cv::merge(hsv, frame);
 
 		//umbralizacion
@@ -36,8 +35,15 @@ int main(int argc, char **argv){
 		cv::Scalar hsv_max = cv::Scalar::all(value[0]+alpha);
 		cv::inRange(hsv[0], cv::Scalar::all(hsv_min[0]), cv::Scalar::all(hsv_max[0]), hsv[0]);
 
-		cv::medianBlur(hsv[0], hsv[0], 5); //eliminar huecos internos
+		//eliminar huecos internos
+		cv::medianBlur(hsv[0], hsv[0], 5); 
 		cv::dilate(hsv[0], hsv[0], cv::Mat());
+
+		//enmascarar los otros canales
+		for(size_t K=1; K<hsv.size(); ++K)
+			for(size_t L=0; L<hsv[K].rows; ++L)
+				for(size_t M=0; M<hsv[K].cols; ++M)
+					hsv[K].at<byte>(L,M) *= (hsv[0].at<byte>(L,M)==255);
 
 		for(size_t K=0; K<hsv.size(); ++K)
 			cv::imshow(windows[K], hsv[K]);
