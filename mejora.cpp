@@ -38,6 +38,7 @@ int main(int argc, char **argv){
 			cv::inRange(hsv[K], cv::Scalar::all(hsv_min[K]), cv::Scalar::all(hsv_max[K]), hsv[K]);
 
 		cv::medianBlur(hsv[0], hsv[0], 5); //eliminar huecos internos
+		cv::dilate(hsv[0], hsv[0], cv::Mat());
 
 		for(size_t K=0; K<hsv.size(); ++K)
 			cv::imshow(windows[K], hsv[K]);
