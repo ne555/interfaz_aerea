@@ -16,6 +16,8 @@ int main(int argc, char **argv){
 		windows[] = {"hue", "saturation", "value"};
 	for(size_t K=0; K<3; ++K)
 		cv::namedWindow(windows[K], CV_WINDOW_KEEPRATIO);
+	
+	cv::namedWindow("Dibujo", CV_WINDOW_AUTOSIZE);	
 
 	int value[3] = {8};
 	int alpha = 7;
@@ -24,7 +26,7 @@ int main(int argc, char **argv){
 
 	for(size_t K=0; K<3; ++K)
 		cv::createTrackbar(windows[K],windows[K], value+K, 255, NULL, NULL);
-
+	cv::Mat frame2=cv::Mat::zeros(480,640,CV_8U);
 	while( true ){
 		capture>>frame;
 		cv::flip(frame, frame, 1);
@@ -43,7 +45,7 @@ int main(int argc, char **argv){
 
 		//eliminar huecos internos
 		cv::medianBlur(hsv[0], hsv[0], 5); 
-		cv::dilate(hsv[0], hsv[0], cv::Mat());
+		cv::dilate(hsv[0], hsv[0], cv::Mat::ones(5,5,CV_8U));
 
 
 
@@ -114,29 +116,31 @@ int main(int argc, char **argv){
 					double d = dist(centr1_x,centr1_y,L,K);
 					if(distmax1<d){
 						distmax1 = d;
-						double lejando1_x=L;
-						double lejando1_y=K;
+						lejando1_x=L;
+						lejando1_y=K;
 					}	
 				}
 				else if(hsv[0].at<byte>(K,L)==200){
 					double d = dist(centr2_x,centr2_y,L,K);
 					if(distmax2<d){
 						distmax2 = d;
-						double lejando2_x=L;
-						double lejando2_y=K;
+						lejando2_x=L;
+						lejando2_y=K;
 					}
 				}
 			}
 		//std::cout<<centr1_x<<"  "<<centr1_y<<"  "<<distmax1<<"  "<<std::endl;
-		//cv::circle(hsv[0],cv::Point((int)centr1_x,(int)centr1_y),(int)distmax1,cv::Scalar::all(255),1);
-		//cv::circle(hsv[0],cv::Point((int)centr2_x,(int)centr2_y),(int)distmax2,cv::Scalar::all(255),1);
+		cv::circle(hsv[0],cv::Point((int)centr1_x,(int)centr1_y),(int)distmax1,cv::Scalar::all(255),1);
+		cv::circle(hsv[0],cv::Point((int)centr2_x,(int)centr2_y),(int)distmax2,cv::Scalar::all(255),1);
 			
 		double c1 = distmax1*distmax1*3.1416;
 		double c2 = distmax2*distmax2*3.1416;
 
 		double razon1 = n1/c1;
 		double razon2 = n2/c2;
-		
+
+		double indicex = 0;
+		double indicey = 0;
 		//std::cout<<"r1: "<<razon1<<" "<<"r2: "<<razon2<<std::endl;
 		if(razon2<razon1){ 
 			for(size_t K=0; K<hsv[0].rows; ++K)
@@ -146,6 +150,8 @@ int main(int argc, char **argv){
 				}
 		
 			}
+			indicex = lejando2_x;
+			indicey = lejando2_y;
 		}
 		else{
 			for(size_t K=0; K<hsv[0].rows; ++K)
@@ -153,8 +159,9 @@ int main(int argc, char **argv){
 				if(hsv[0].at<byte>(K,L)==200){
 					hsv[0].at<byte>(K,L)=0;
 				}
-
 			}
+			indicex = lejando1_x;
+			indicey = lejando1_y;
 		}					
 		//enmascarar los otros canales
 		for(size_t K=1; K<hsv.size(); ++K)
@@ -162,7 +169,11 @@ int main(int argc, char **argv){
 				for(size_t M=0; M<hsv[K].cols; ++M)
 					hsv[K].at<byte>(L,M) *= (hsv[0].at<byte>(L,M)>0);
 
-
+		//cv::cvSetAt(frame2, cv::cvScalar( 1, 1, 1, 0),indicey,indicex);
+		//frame2.at<unsigned char>(indicey,indicex)= 255;
+		cv::circle(frame2,cv::Point((int)indicex,(int)indicey),(int)5,cv::Scalar::all(255),-1);
+		cv::imshow("Dibujo", frame2);
+		frame2*= 0.8;
 
 		for(size_t K=0; K<hsv.size(); ++K)
 			cv::imshow(windows[K], hsv[K]);
