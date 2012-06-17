@@ -7,8 +7,4 @@ CXXFLAGS=-O2
 $(Program): $(FICHERO) 
 	$(CC) $(CXXFLAGS) $(FICHERO) $(LIBS)  $(LIB)  -o $(Program) 
 	ls -l $(Program)
-	size $(Program)
 
-.PHONY: build_msg
-build_msg:
-	@printf "#\n# Building $(Program)\n#\n"
