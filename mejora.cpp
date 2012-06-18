@@ -8,6 +8,8 @@ double dist(double centr_x,double centr_y,int L,int K){
 	return (double) sqrt((centr_x-L)*(centr_x-L)+(centr_y-K)*(centr_y-K));
 }
 
+cv::Mat submuestreo(const cv::Mat &image, int scale);
+
 int main(int argc, char **argv){
 	cv::VideoCapture capture(0);
 	cv::Mat frame;
@@ -35,20 +37,26 @@ int main(int argc, char **argv){
 		cv::medianBlur(frame, frame, 5); //quitar ruido impulsivo
 
 		cv::split(frame, hsv);
-
-		cv::merge(hsv, frame);
+		for(size_t K=0; K<hsv.size(); ++K)
+			hsv[K] = submuestreo(hsv[K], 4);
 
 		//umbralizacion
 		cv::Scalar hsv_min = cv::Scalar::all(value[0]-alpha);
 		cv::Scalar hsv_max = cv::Scalar::all(value[0]+alpha);
+		//hsv[0] = submuestreo(hsv[0], 2);
 		cv::inRange(hsv[0], cv::Scalar::all(hsv_min[0]), cv::Scalar::all(hsv_max[0]), hsv[0]);
 
 		//eliminar huecos internos
 		cv::medianBlur(hsv[0], hsv[0], 5); 
+		//cv::GaussianBlur(hsv[0], hsv[0], cv::Size(5,5),0); 
+		cv::Mat max_min;
 		cv::dilate(hsv[0], hsv[0], cv::Mat::ones(5,5,CV_8U));
+		//cv::erode(hsv[0], max_min, cv::Mat::ones(5,5,CV_8U));
 
+		//hsv[0] -= max_min;
+		//cv::dilate(hsv[1], hsv[1], cv::Mat::ones(5,5,CV_8U));
 
-
+		#if 1
 		//identificacion de regiones
 		byte color = 50;
 		for(size_t K=0; K<hsv[0].rows; ++K)
@@ -174,6 +182,7 @@ int main(int argc, char **argv){
 		cv::circle(frame2,cv::Point((int)indicex,(int)indicey),(int)5,cv::Scalar::all(255),-1);
 		cv::imshow("Dibujo", frame2);
 		frame2*= 0.8;
+		#endif
 
 		for(size_t K=0; K<hsv.size(); ++K)
 			cv::imshow(windows[K], hsv[K]);
@@ -187,4 +196,12 @@ int main(int argc, char **argv){
 	return 0;
 }
 
+cv::Mat submuestreo(const cv::Mat &image, int scale){
+	cv::Mat result( image.rows/scale, image.cols/scale, image.type() );
+	for(size_t K=0; K<result.rows; ++K)
+		for(size_t L=0; L<result.cols; ++L)
+			result.at<byte>(K,L) = image.at<byte>(scale*K,scale*L);
+
+	return result;
+}
 
