@@ -104,7 +104,7 @@ set<pair <double,double> > obtener_punteros(cv::Mat &hsv,vector<double> razones,
 
 int main(int argc, char **argv){
 	cv::VideoCapture capture(0);
-	cv::Mat frame, framergb,fondo;
+	cv::Mat frame, framergb,fondo,img;
 
 	std::string windows[] = {"hue", "saturation", "value"};
 	for(size_t K=0; K<3; ++K)
@@ -112,10 +112,16 @@ int main(int argc, char **argv){
 	
 	//cv::namedWindow("Dibujo", CV_WINDOW_AUTOSIZE);	
 
-	int value[3] = {8};
-	int alpha = 7;
-	cv::namedWindow("alpha", CV_WINDOW_KEEPRATIO);
-	cv::createTrackbar("alpha","alpha", &alpha, 255, NULL, NULL);
+	int value[3] = {7,189,125};
+	int alpha[3] = {5,64,100};
+	cv::namedWindow("parametros", CV_WINDOW_KEEPRATIO);
+	cv::createTrackbar("alpha0","parametros", &alpha[0], 255, NULL, NULL);
+	cv::createTrackbar("alpha1","parametros", &alpha[1], 255, NULL, NULL);
+	cv::createTrackbar("alpha2","parametros", &alpha[2], 255, NULL, NULL);
+	int u[3] = {117,66,90};
+	cv::createTrackbar("u0","parametros", &u[0], 255, NULL, NULL);
+	cv::createTrackbar("u1","parametros", &u[1], 255, NULL, NULL);
+	cv::createTrackbar("u2","parametros", &u[2], 255, NULL, NULL);
 
 	for(size_t K=0; K<3; ++K)
 		cv::createTrackbar(windows[K],windows[K], value+K, 255, NULL, NULL);
@@ -135,15 +141,26 @@ int main(int argc, char **argv){
 		cv::flip(frame, frame, 1);
 		std::vector<cv::Mat> hsv;
 		cv::cvtColor(frame, frame, CV_BGR2HSV);
-		
-		cv::medianBlur(frame, frame, 5); //quitar ruido impulsivo
+		//probar luego
+		//cv::medianBlur(frame, frame, 5); //quitar ruido impulsivo
 
 		cv::split(frame, hsv);
 
 		//umbralizacion
-		cv::Scalar hsv_min = cv::Scalar::all(value[0]-alpha);
-		cv::Scalar hsv_max = cv::Scalar::all(value[0]+alpha);
-		cv::inRange(hsv[0], cv::Scalar::all(hsv_min[0]), cv::Scalar::all(hsv_max[0]), hsv[0]);
+		cv::Scalar hsv_min(value[0]-alpha[0], value[1]-alpha[1], value[2]-alpha[2], 0);
+		cv::Scalar hsv_max(value[0]+alpha[0], value[1]+alpha[1], value[2]+alpha[2], 0);
+		for(size_t K=0; K<hsv.size(); ++K){
+			cv::Mat aux;
+			cv::inRange(hsv[K], cv::Scalar::all(hsv_min[K]), cv::Scalar::all(hsv_max[K]), aux);
+		}
+		threshold(hsv[0],hsv[0],u[0],255,cv::THRESH_BINARY);
+		threshold(hsv[1],hsv[1],u[1],255,cv::THRESH_BINARY);
+		threshold(hsv[2],hsv[2],u[2],255,cv::THRESH_BINARY_INV);
+
+		bitwise_and(hsv[2],hsv[0],img);
+		bitwise_or(img,hsv[1],img);
+
+		hsv[0] = img;
 
 		//eliminar huecos internos
 		cv::medianBlur(hsv[0], hsv[0], 5); 

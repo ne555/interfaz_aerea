@@ -118,9 +118,9 @@ int main(int argc, char **argv){
 		}
 		#endif
 		
-		threshold(hsv[0],hsv[0],u[0],255,cv::THRESH_BINARY);
-		threshold(hsv[1],hsv[1],u[1],255,cv::THRESH_BINARY);
-		threshold(hsv[2],hsv[2],u[2],255,cv::THRESH_BINARY_INV);
+		//threshold(hsv[0],hsv[0],u[0],255,cv::THRESH_BINARY);
+		//threshold(hsv[1],hsv[1],u[1],255,cv::THRESH_BINARY);
+		/threshold(hsv[2],hsv[2],u[2],255,cv::THRESH_BINARY_INV);
 
 		bitwise_and(hsv[2],hsv[0],img);
 		bitwise_or(img,hsv[1],img);
