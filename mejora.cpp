@@ -113,27 +113,58 @@ cv::Mat submuestreo(const cv::Mat &image,int scale){
 
 int main(int argc, char **argv){
 	cv::VideoCapture capture(0);
-	cv::Mat frame,img;
+	cv::Mat frame,img,framergb,fondo,img1, img2, img3, img4, img5;
 
 	std::string windows[] = {"hue", "saturation", "value"};
-	for(size_t K=0; K<3; ++K)
+	for(size_t K=0; K<1; ++K)
 		cv::namedWindow(windows[K], CV_WINDOW_KEEPRATIO);	
 
 	int value[3] = {7,117,65};
-	int alpha[3] = {6,55,35};
+	int alpha[3] = {6,55,35},umbral=15;
 	cv::namedWindow("parametros", CV_WINDOW_KEEPRATIO);
 	cv::createTrackbar("alpha0","parametros", &alpha[0], 255, NULL, NULL);
 	cv::createTrackbar("alpha1","parametros", &alpha[1], 255, NULL, NULL);
 	cv::createTrackbar("alpha2","parametros", &alpha[2], 255, NULL, NULL);
-	
+
+	cv::namedWindow("mask", CV_WINDOW_KEEPRATIO);
+	//cv::namedWindow("hue2", CV_WINDOW_KEEPRATIO);
+//	cv::namedWindow("resultado2", CV_WINDOW_KEEPRATIO);
+	cv::namedWindow("fondo", CV_WINDOW_KEEPRATIO);
+	cv::createTrackbar("umbral", "mask", &umbral, 255, NULL, NULL);
+
 	cv::namedWindow("original", CV_WINDOW_KEEPRATIO);	
 	cv::namedWindow("resultado", CV_WINDOW_KEEPRATIO);	
-	for(size_t K=0; K<3; ++K)
+	for(size_t K=0; K<1; ++K)
 		cv::createTrackbar(windows[K],windows[K], value+K, 255, NULL, NULL);
+
+while(true){
+	capture>>fondo;
+	if(cv::waitKey(30) != -1) break;
+	cv::imshow("fondo", fondo);
+}
+
+	cv::flip(fondo, fondo, 1);	
+	fondo = fondo.clone();
+	cv::imshow("fondo", fondo);
 
 	while( true ){
 		capture>>frame;			
 		cv::flip(frame, frame, 1);
+		framergb = frame;
+		std::vector<cv::Mat> rgb;
+		std::vector<cv::Mat> rgbfondo;
+		cv::split(framergb,rgb);
+		cv::split(fondo,rgbfondo);
+		cv::threshold(cv::abs(rgb[0]-rgbfondo[0]),img3,umbral,255,cv::THRESH_BINARY);
+		cv::threshold(cv::abs(rgb[1]-rgbfondo[1]),img4,umbral,255,cv::THRESH_BINARY); 
+		cv::threshold(cv::abs(rgb[2]-rgbfondo[2]),img5,umbral,255,cv::THRESH_BINARY);
+		
+		bitwise_or(img3,img4,img2);	
+		bitwise_or(img2,img5,img2);
+
+		cv::imshow("mask", img2);
+		
+
 		std::vector<cv::Mat> hsv;
 		cv::cvtColor(frame, frame, CV_BGR2HSV);
 		
@@ -158,6 +189,15 @@ int main(int argc, char **argv){
 		for(size_t K=0; K<hsv.size(); ++K){
 			cv::inRange(hsv[K], cv::Scalar::all(hsv_min[K]), cv::Scalar::all(hsv_max[K]),hsv[K]);
 		}
+
+
+		
+//		cv::imshow("hue2",hsv[0]);
+		
+		
+		
+		
+//		cv::imshow("resultado2",img1);
 		
 		#if(1)	
 		//eliminar huecos internos
@@ -171,8 +211,9 @@ int main(int argc, char **argv){
 		cv::erode(hsv[1], hsv[1], cv::Mat::ones(5,5,CV_8U));	
 		#endif
 
-		bitwise_and(hsv[0],hsv[1],img);
-		
+		//bitwise_and(hsv[0],hsv[0],img);
+		img = hsv[0];
+
 		#if(1)
 		//eliminar huecos internos
 		cv::dilate(img, img, cv::Mat::ones(5,5,CV_8U));
@@ -184,6 +225,25 @@ int main(int argc, char **argv){
 		
 		#endif
 
+		threshold(img,img,0,255,cv::THRESH_BINARY); 
+		dilate(img,img,cv::Mat::ones(3,3,CV_8U));		
+		dilate(img2,img2,cv::Mat::ones(3,3,CV_8U));
+		bitwise_and(img,img2,img);
+
+		cv::floodFill(img, cv::Point(0,0), 128);
+		
+		threshold(img,img1,100,255,cv::THRESH_BINARY); 	
+	
+		threshold(img,img,150,255,cv::THRESH_BINARY_INV); 	
+
+		bitwise_and(img1,img,img);
+		
+		bitwise_not(img,img);
+
+		cv::erode(img, img, cv::Mat::ones(5,5,CV_8U));
+		cv::dilate(img, img, cv::Mat::ones(5,5,CV_8U));
+
+		cv::imshow("",img);
 
 		#if(1)
 		//identificacion de regiones
@@ -229,7 +289,7 @@ int main(int argc, char **argv){
 		#endif
 
 		//muestra los 3 canales 
-		for(size_t K=0; K<hsv.size(); ++K)
+		for(size_t K=0; K<1; ++K)
 			cv::imshow(windows[K], hsv[K]);
 		
 		//muestra el resultado

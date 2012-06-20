@@ -124,13 +124,17 @@ int main(int argc, char **argv){
 	
 	cv::Mat dibujo=cv::Mat::zeros(480,640,CV_8U);
 	
-	cv::waitKey(4000);
-
+while(true){
 	capture>>fondo;
+	if(cv::waitKey(30) != -1) break;
+	cv::imshow("fondo", fondo);
+}
+
 	cv::flip(fondo, fondo, 1);	
 	fondo = fondo.clone();
-
 	cv::imshow("fondo", fondo);
+
+
 	//int umb=0;
 	//cv::createTrackbar("umbral","hue", &umb, 255, NULL, NULL);
 	while( true ){
