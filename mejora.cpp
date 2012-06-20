@@ -76,14 +76,19 @@ vector<double> obtener_razones(vector<double> &areas,vector<double> & radios){
 	return razones;	
 }
 
-set<pair <double,double> > obtener_punteros(cv::Mat &hsv,vector<double> razones,vector<size_t> &colores,vector< pair<double,double> >lejanos){
+set<pair <double,double> > obtener_punteros(cv::Mat &hsv,vector<double> razones,vector<size_t> &colores,vector< pair<double,double> >lejanos,vector<double> &areas){
 		set<pair <double,double> >punteros;
-		vector<double>::iterator q = max_element(razones.begin(),razones.end());	
+		vector<double>::iterator q = max_element(razones.begin(),razones.end());
+		vector<double>::iterator q2 = max_element(areas.begin(),areas.end());
+		double aux = *q2;
+		*q2 = 0.00;
+		vector<double>::iterator q3 = max_element(areas.begin(),areas.end());
+		*q2 = aux;
 		for(size_t K=0; K<hsv.rows; ++K)
 			for(size_t L=0; L<hsv.cols; ++L){
 				vector<size_t>::iterator p = find(colores.begin(),colores.end(),hsv.at<byte>(K,L));
 				if( p!= colores.end()){
-					if(razones[p-colores.begin()] == *q){
+					if(razones[p-colores.begin()] == *q || areas[p-colores.begin()]/ (*q3)<0.25){
 						hsv.at<byte>(K,L)= 0;
 											
 					}
@@ -181,7 +186,7 @@ int main(int argc, char **argv){
 
 		
 		//double umbral = (double)umb/255.00;
-		set< pair<double,double> > punteros = obtener_punteros(hsv[0],razones,colores,lejanos);
+		set< pair<double,double> > punteros = obtener_punteros(hsv[0],razones,colores,lejanos,areas);
 
 					
 		//enmascarar los otros canales
