@@ -19,7 +19,7 @@ int main(int argc, char **argv){
 	for(size_t K=0; K<3; ++K)
 		cv::namedWindow(windows[K], CV_WINDOW_KEEPRATIO);
 	
-	cv::namedWindow("Dibujo", CV_WINDOW_AUTOSIZE);	
+	cv::namedWindow("Dibujo", CV_WINDOW_KEEPRATIO);	
 
 	int value[3] = {8};
 	int alpha = 7;
@@ -28,7 +28,7 @@ int main(int argc, char **argv){
 
 	for(size_t K=0; K<3; ++K)
 		cv::createTrackbar(windows[K],windows[K], value+K, 255, NULL, NULL);
-	cv::Mat frame2=cv::Mat::zeros(480,640,CV_8U);
+	cv::Mat frame2=cv::Mat::zeros(480/4,640/4,CV_8U);
 	while( true ){
 		capture>>frame;
 		cv::flip(frame, frame, 1);
@@ -48,7 +48,9 @@ int main(int argc, char **argv){
 
 		//eliminar huecos internos
 		cv::medianBlur(hsv[0], hsv[0], 5); 
-		//cv::GaussianBlur(hsv[0], hsv[0], cv::Size(5,5),0); 
+		cv::GaussianBlur(hsv[0], hsv[0], cv::Size(5,5),0); 
+		hsv[0] = hsv[0].mul( hsv[0]>128 );
+
 		cv::Mat max_min;
 		cv::dilate(hsv[0], hsv[0], cv::Mat::ones(5,5,CV_8U));
 		//cv::erode(hsv[0], max_min, cv::Mat::ones(5,5,CV_8U));
@@ -60,12 +62,11 @@ int main(int argc, char **argv){
 		//identificacion de regiones
 		byte color = 50;
 		for(size_t K=0; K<hsv[0].rows; ++K)
-			for(size_t L=0; L<hsv[0].cols; ++L){
+			for(size_t L=0; L<hsv[0].cols; ++L)
 				if(hsv[0].at<byte>(K,L)==255){
 					cv::floodFill(hsv[0], cv::Point(L,K), color);
 					color += 10;
 				}
-			}
 
 		//Sobreviven los mas grandes
 		cv::Mat freq = histogram(hsv[0]);
@@ -176,6 +177,7 @@ int main(int argc, char **argv){
 			for(size_t L=0; L<hsv[K].rows; ++L)
 				for(size_t M=0; M<hsv[K].cols; ++M)
 					hsv[K].at<byte>(L,M) *= (hsv[0].at<byte>(L,M)>0);
+
 
 		//cv::cvSetAt(frame2, cv::cvScalar( 1, 1, 1, 0),indicey,indicex);
 		//frame2.at<unsigned char>(indicey,indicex)= 255;
