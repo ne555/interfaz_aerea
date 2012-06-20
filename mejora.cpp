@@ -88,7 +88,7 @@ set<pair <double,double> > obtener_punteros(cv::Mat &hsv,vector<double> razones,
 			for(size_t L=0; L<hsv.cols; ++L){
 				vector<size_t>::iterator p = find(colores.begin(),colores.end(),hsv.at<byte>(K,L));
 				if( p!= colores.end()){
-					if(razones[p-colores.begin()] == *q || areas[p-colores.begin()]/ (*q3)<0.25){
+					if(areas[p-colores.begin()]/ (*q3)<0.25 || razones[p-colores.begin()] == *q ){
 						hsv.at<byte>(K,L)= 0;
 											
 					}
@@ -102,83 +102,102 @@ set<pair <double,double> > obtener_punteros(cv::Mat &hsv,vector<double> razones,
 		return punteros;
 }
 
+cv::Mat submuestreo(const cv::Mat &image,int scale){
+	cv::Mat result(image.rows/scale, image.cols/scale, image.type() );
+	for(size_t K=0;K<result.rows; K++)
+		for(size_t L=0;L<result.cols; L++)
+			result.at<byte>(K,L) = image.at<byte>(scale*K,scale*L);
+
+	return result;
+}
+
 int main(int argc, char **argv){
 	cv::VideoCapture capture(0);
-	cv::Mat frame, framergb,fondo,img;
+	cv::Mat frame,img;
 
 	std::string windows[] = {"hue", "saturation", "value"};
 	for(size_t K=0; K<3; ++K)
-		cv::namedWindow(windows[K], CV_WINDOW_KEEPRATIO);
-	
-	//cv::namedWindow("Dibujo", CV_WINDOW_AUTOSIZE);	
+		cv::namedWindow(windows[K], CV_WINDOW_KEEPRATIO);	
 
-	int value[3] = {7,189,125};
-	int alpha[3] = {5,64,100};
+	int value[3] = {7,117,65};
+	int alpha[3] = {6,55,35};
 	cv::namedWindow("parametros", CV_WINDOW_KEEPRATIO);
 	cv::createTrackbar("alpha0","parametros", &alpha[0], 255, NULL, NULL);
 	cv::createTrackbar("alpha1","parametros", &alpha[1], 255, NULL, NULL);
 	cv::createTrackbar("alpha2","parametros", &alpha[2], 255, NULL, NULL);
-	int u[3] = {117,66,90};
-	cv::createTrackbar("u0","parametros", &u[0], 255, NULL, NULL);
-	cv::createTrackbar("u1","parametros", &u[1], 255, NULL, NULL);
-	cv::createTrackbar("u2","parametros", &u[2], 255, NULL, NULL);
-
+	
+	cv::namedWindow("original", CV_WINDOW_KEEPRATIO);	
+	cv::namedWindow("resultado", CV_WINDOW_KEEPRATIO);	
 	for(size_t K=0; K<3; ++K)
 		cv::createTrackbar(windows[K],windows[K], value+K, 255, NULL, NULL);
-	
-	cv::Mat dibujo=cv::Mat::zeros(480,640,CV_8U);
-	
-	capture>>fondo;
-	//int umb=0;
-	//cv::createTrackbar("umbral","hue", &umb, 255, NULL, NULL);
-	while( true ){
-		
-		capture>>frame;
-		framergb = frame;
-		
-			
 
+	while( true ){
+		capture>>frame;			
 		cv::flip(frame, frame, 1);
 		std::vector<cv::Mat> hsv;
 		cv::cvtColor(frame, frame, CV_BGR2HSV);
-		//probar luego
-		//cv::medianBlur(frame, frame, 5); //quitar ruido impulsivo
-
+		
+		#if(1)
+		//quitar ruido impulsivo
+		cv::medianBlur(frame, frame, 5); 
+		#endif
+		
+		//separa en 3 canales 
 		cv::split(frame, hsv);
+		
+		#if(0)	
+		//cuantizacion
+		for(int K = 0;K<3;K++)
+			hsv[K] = submuestreo(hsv[K],4);
+		
+		#endif
 
 		//umbralizacion
 		cv::Scalar hsv_min(value[0]-alpha[0], value[1]-alpha[1], value[2]-alpha[2], 0);
 		cv::Scalar hsv_max(value[0]+alpha[0], value[1]+alpha[1], value[2]+alpha[2], 0);
 		for(size_t K=0; K<hsv.size(); ++K){
-			cv::Mat aux;
-			cv::inRange(hsv[K], cv::Scalar::all(hsv_min[K]), cv::Scalar::all(hsv_max[K]), aux);
+			cv::inRange(hsv[K], cv::Scalar::all(hsv_min[K]), cv::Scalar::all(hsv_max[K]),hsv[K]);
 		}
-		threshold(hsv[0],hsv[0],u[0],255,cv::THRESH_BINARY);
-		threshold(hsv[1],hsv[1],u[1],255,cv::THRESH_BINARY);
-		threshold(hsv[2],hsv[2],u[2],255,cv::THRESH_BINARY_INV);
-
-		bitwise_and(hsv[2],hsv[0],img);
-		bitwise_or(img,hsv[1],img);
-
-		hsv[0] = img;
-
+		
+		#if(1)	
 		//eliminar huecos internos
-		cv::medianBlur(hsv[0], hsv[0], 5); 
-		//cv::dilate(hsv[0], hsv[0], cv::Mat::ones(3,3,CV_8U));
+		cv::dilate(hsv[0], hsv[0], cv::Mat::ones(5,5,CV_8U));
+		cv::dilate(hsv[1], hsv[1], cv::Mat::ones(5,5,CV_8U));	
+		#endif
+		
+		#if(1)	
+		//recupera forma
+		cv::erode(hsv[0], hsv[0], cv::Mat::ones(5,5,CV_8U));
+		cv::erode(hsv[1], hsv[1], cv::Mat::ones(5,5,CV_8U));	
+		#endif
 
+		bitwise_and(hsv[0],hsv[1],img);
+		
+		#if(1)
+		//eliminar huecos internos
+		cv::dilate(img, img, cv::Mat::ones(5,5,CV_8U));
+		#endif
+
+		#if(1)	
+		//recupera forma
+		cv::erode(img, img, cv::Mat::ones(5,5,CV_8U));
+		
+		#endif
+
+
+		#if(1)
 		//identificacion de regiones
 		byte color = 50;
-		for(size_t K=0; K<hsv[0].rows; ++K)
-			for(size_t L=0; L<hsv[0].cols; ++L){
-				if(hsv[0].at<byte>(K,L)==255){
-					cv::floodFill(hsv[0], cv::Point(L,K), color);
+		for(size_t K=0; K<img.rows; ++K)
+			for(size_t L=0; L<img.cols; ++L){
+				if(img.at<byte>(K,L)==255){
+					cv::floodFill(img, cv::Point(L,K), color);
 					color += 10;
 				}
 			}
 
-		//Sobreviven los mas grandes
-		#if(1)		
-		cv::Mat freq = histogram(hsv[0]);
+		//Sobreviven los mas grandes	
+		cv::Mat freq = histogram(img);
 		*freq.begin<float>() = 0;
 		vector<size_t> colores; 
 		vector<double> areas= obtener_areas(freq,colores,3);
@@ -186,47 +205,39 @@ int main(int argc, char **argv){
 		/*for(int k=0;k<areas.size();k++){
 			std::cout<<areas[k]<<endl;		
 		}
-		std::cin.get();*/
-		vector< pair<double,double> >centroides = obtener_centroides(hsv[0],colores);
+		*/
 		
+		//obtiene los centroides
+		vector< pair<double,double> >centroides = obtener_centroides(img,colores);
+		
+		//obtiene los radios y los dedos indices	
 		vector<double>radios;
-		vector< pair<double,double> >lejanos = obtener_lejanos(hsv[0],colores,centroides,radios);		
-	
-		//cv::circle(hsv[0],cv::Point((int)centr1_x,(int)centr1_y),(int)distmax1,cv::Scalar::all(255),1);
-		//cv::circle(hsv[0],cv::Point((int)centr2_x,(int)centr2_y),(int)distmax2,cv::Scalar::all(255),1);
-			
+		vector< pair<double,double> >lejanos = obtener_lejanos(img,colores,centroides,radios);		
+		
+		//obtiene las razones		
 		vector<double>razones = obtener_razones(areas,radios);
 		
+		//elimina los objetos que no interesan y obtiene los punteros finales	
+		set< pair<double,double> > punteros = obtener_punteros(img,razones,colores,lejanos,areas);
 		
-		//std::cout<<razones[0]<<"    "<<razones[1]<<"    "<<razones[2]<<endl;		
-		
-
-		
-		//double umbral = (double)umb/255.00;
-		set< pair<double,double> > punteros = obtener_punteros(hsv[0],razones,colores,lejanos,areas);
-
-					
-		//enmascarar los otros canales
-		for(size_t K=1; K<hsv.size(); ++K)
-			for(size_t L=0; L<hsv[K].rows; ++L)
-				for(size_t M=0; M<hsv[K].cols; ++M)
-					hsv[K].at<byte>(L,M) *= (hsv[0].at<byte>(L,M)>0);
-		
+		//dibuja los punteros
 		set< pair < double,double > >::iterator p = punteros.begin();
 		while(p!= punteros.end()){
-			cv::circle(hsv[0],cv::Point((int)(*p).first,(int)(*p).second),5,cv::Scalar::all(255),-1);
+			cv::circle(img,cv::Point((int)(*p).first,(int)(*p).second),5,cv::Scalar::all(255),-1);
 			p++;	
 		}
 		#endif
-		//cv::imshow("Dibujo", frame2);
-		//frame2*= 0.8;
 
+		//muestra los 3 canales 
 		for(size_t K=0; K<hsv.size(); ++K)
 			cv::imshow(windows[K], hsv[K]);
-
+		
+		//muestra el resultado
+		cv::imshow("resultado", img);		
+		
+		//muestra el original			
 		cv::cvtColor(frame, frame, CV_HSV2BGR);
-
-		cv::imshow("alpha", frame);
+		cv::imshow("original", frame);
 
 		if(cv::waitKey(10)>=0) break;
 	}
