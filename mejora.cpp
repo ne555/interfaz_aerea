@@ -113,7 +113,7 @@ cv::Mat submuestreo(const cv::Mat &image,int scale){
 
 int main(int argc, char **argv){
 	cv::VideoCapture capture(0);
-	cv::Mat frame,framergb,fondo,here_were_the_hands;
+	cv::Mat frame,framergb,fondo;
 
 	std::string windows[] = {"hue", "saturation", "value"};
 	for(size_t K=0; K<1; ++K)
@@ -121,13 +121,10 @@ int main(int argc, char **argv){
 
 	int value[3] = {7,117,65};
 	int alpha[3] = {6,55,35},umbral=30;
-	cv::namedWindow("parametros", CV_WINDOW_KEEPRATIO);
-	cv::createTrackbar("alpha0","parametros", &alpha[0], 255, NULL, NULL);
-	cv::createTrackbar("alpha1","parametros", &alpha[1], 255, NULL, NULL);
-	cv::createTrackbar("alpha2","parametros", &alpha[2], 255, NULL, NULL);
 
 	cv::namedWindow("mask", CV_WINDOW_KEEPRATIO);
 	cv::namedWindow("fondo", CV_WINDOW_KEEPRATIO);
+
 	cv::createTrackbar("umbral", "mask", &umbral, 255, NULL, NULL);
 
 	cv::namedWindow("original", CV_WINDOW_KEEPRATIO);	
@@ -135,17 +132,24 @@ int main(int argc, char **argv){
 	for(size_t K=0; K<1; ++K)
 		cv::createTrackbar(windows[K],windows[K], value+K, 255, NULL, NULL);
 
-	here_were_the_hands = 255*cv::Mat::ones(480,640,CV_8U);
-	fondo = cv::Mat::zeros(480,640,CV_8UC3);
+	while(true){
+		capture>>fondo;
+		cv::imshow("fondo", fondo);
+		if( cv::waitKey(30) != -1)
+			break;
+	}
 
+	fondo=fondo.clone();
+	cv::flip(fondo, fondo, 1);
+	std::vector<cv::Mat> rgbfondo;
+	cv::split(fondo,rgbfondo);
+	cv::imshow("fondo", fondo);
 	while( true ){
 		capture>>frame;			
 		cv::flip(frame, frame, 1);
 		framergb = frame;
 		std::vector<cv::Mat> rgb;
-		std::vector<cv::Mat> rgbfondo;
 		cv::split(framergb,rgb);
-		cv::split(fondo,rgbfondo);
 
 		cv::Mat resta_rojo, resta_verde, resta_azul;
 
@@ -153,16 +157,8 @@ int main(int argc, char **argv){
 		cv::threshold(cv::abs(rgb[1]-rgbfondo[1]),resta_verde,umbral,255,cv::THRESH_BINARY); 
 		cv::threshold(cv::abs(rgb[2]-rgbfondo[2]),resta_azul,umbral,255,cv::THRESH_BINARY);
 		
-		//bitwise_or(resta_rojo,resta_verde,mask_diff);	
-		//bitwise_or(mask_diff,resta_azul,mask_diff);
-		//bitwise_or(mask_diff,here_were_the_hands,mask_diff);
 		cv::Mat mask_diff = resta_rojo bitor resta_verde bitor resta_azul;
 		cv::imshow("mask", mask_diff);
-		mask_diff = mask_diff bitor here_were_the_hands;
-
-
-		cv::imshow("frame", frame);
-		cv::imshow("fondo", fondo);
 
 		std::vector<cv::Mat> hsv;
 		cv::cvtColor(frame, frame, CV_BGR2HSV);
@@ -219,7 +215,6 @@ int main(int argc, char **argv){
 
 		//bitwise_and(mask_hue,mask_diff,mask_hue);
 		cv::Mat mask_total = mask_hue bitand mask_diff;
-		#if 0
 
 		cv::floodFill(mask_total, cv::Point(0,0), 128);
 		
@@ -234,8 +229,6 @@ int main(int argc, char **argv){
 
 		cv::erode(mask_total, mask_total, cv::Mat::ones(5,5,CV_8U));
 		cv::dilate(mask_total, mask_total, cv::Mat::ones(5,5,CV_8U));
-
-		cv::imshow("",mask_total);
 
 		#if(1)
 		//identificacion de regiones
@@ -275,7 +268,6 @@ int main(int argc, char **argv){
 		}
 		#endif
 
-		#endif
 
 		//muestra los 3 canales 
 		for(size_t K=0; K<1; ++K)
@@ -286,19 +278,13 @@ int main(int argc, char **argv){
 		
 		//muestra el original			
 		cv::cvtColor(frame, frame, CV_HSV2BGR);
+
 		cv::imshow("original", frame);
 
-		cv::imshow("mask_total", mask_total);
-		cv::imshow("mask_hue", mask_hue);
-		cv::imshow("mask_diff", mask_diff);
-		cv::imshow("original", frame);
-		cv::imshow("here_were_the_hands", here_were_the_hands);
 
 		if(cv::waitKey(10)>=0) break;
 
-		//Utilizar imagen anterior como fondo
-		fondo=frame.clone();
-		here_were_the_hands = 255*(mask_total>0);
+
 
 	}
 	return 0;
