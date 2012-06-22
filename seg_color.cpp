@@ -34,6 +34,8 @@ int main(int argc, char **argv){
 		cv::cvtColor(frame, frame, CV_BGR2HSV);
 		cv::split(frame, hsv);
 
+		for(size_t K=0; K<hsv.size(); ++K)
+			cv::imshow(windows[K]+"orig", hsv[K]);
 
 		cv::Scalar hsv_min(value[0]-alpha[0], value[1]-alpha[1], value[2]-alpha[2], 0);
 		cv::Scalar hsv_max(value[0]+alpha[0], value[1]+alpha[1], value[2]+alpha[2], 0);
