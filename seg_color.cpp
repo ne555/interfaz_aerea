@@ -45,11 +45,15 @@ int main(int argc, char **argv){
 			cv::inRange(hsv[K], cv::Scalar::all(hsv_min[K]), cv::Scalar::all(hsv_max[K]), hsv[K]);
 		}
  
+		for(size_t K=0; K<hsv.size(); ++K){
+			//cv::inRange(hsv[K], cv::Scalar::all(hsv_min[K]), cv::Scalar::all(hsv_max[K]), hsv[K]);
+			cv::dilate(hsv[K], hsv[K], cv::Mat::ones(5,5,CV_8U));
+		}
 
-		bitwise_and(hsv[1],hsv[0],img);
-		bitwise_and(img,hsv[2],img);
+		//bitwise_and(hsv[1],hsv[0],img);
+		//bitwise_and(img,hsv[2],img);
 		
-		cv::imshow("logico", img);
+		//cv::imshow("logico", img);
 		
 		for(size_t K=0; K<hsv.size(); ++K)
 			cv::imshow(windows[K], hsv[K]);
